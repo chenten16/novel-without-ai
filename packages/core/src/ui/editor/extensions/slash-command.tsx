@@ -10,7 +10,6 @@ import React, {
 import { Editor, Range, Extension } from "@tiptap/core";
 import Suggestion from "@tiptap/suggestion";
 import { ReactRenderer } from "@tiptap/react";
-import { useCompletion } from "ai/react";
 import tippy from "tippy.js";
 import {
   Heading1,
@@ -76,12 +75,12 @@ const Command = Extension.create({
 
 const getSuggestionItems = ({ query }: { query: string }) => {
   return [
-    {
-      title: "Continue writing",
-      description: "Use AI to expand your thoughts.",
-      searchTerms: ["gpt"],
-      icon: <Magic className="novel-w-7" />,
-    },
+    // {
+    //   title: "Continue writing",
+    //   description: "Use AI to expand your thoughts.",
+    //   searchTerms: ["gpt"],
+    //   icon: <Magic className="novel-w-7" />,
+    // },
     {
       title: "Send Feedback",
       description: "Let us know how we can improve.",
@@ -196,27 +195,27 @@ const getSuggestionItems = ({ query }: { query: string }) => {
       command: ({ editor, range }: CommandProps) =>
         editor.chain().focus().deleteRange(range).toggleCodeBlock().run(),
     },
-    {
-      title: "Image",
-      description: "Upload an image from your computer.",
-      searchTerms: ["photo", "picture", "media"],
-      icon: <ImageIcon size={18} />,
-      command: ({ editor, range }: CommandProps) => {
-        editor.chain().focus().deleteRange(range).run();
-        // upload image
-        const input = document.createElement("input");
-        input.type = "file";
-        input.accept = "image/*";
-        input.onchange = async () => {
-          if (input.files?.length) {
-            const file = input.files[0];
-            const pos = editor.view.state.selection.from;
-            startImageUpload(file, editor.view, pos);
-          }
-        };
-        input.click();
-      },
-    },
+    // {
+    //   title: "Image",
+    //   description: "Upload an image from your computer.",
+    //   searchTerms: ["photo", "picture", "media"],
+    //   icon: <ImageIcon size={18} />,
+    //   command: ({ editor, range }: CommandProps) => {
+    //     editor.chain().focus().deleteRange(range).run();
+    //     // upload image
+    //     const input = document.createElement("input");
+    //     input.type = "file";
+    //     input.accept = "image/*";
+    //     input.onchange = async () => {
+    //       if (input.files?.length) {
+    //         const file = input.files[0];
+    //         const pos = editor.view.state.selection.from;
+    //         startImageUpload(file, editor.view, pos);
+    //       }
+    //     };
+    //     input.click();
+    //   },
+    // },
   ].filter((item) => {
     if (typeof query === "string" && query.length > 0) {
       const search = query.toLowerCase();
@@ -258,52 +257,15 @@ const CommandList = ({
 }) => {
   const [selectedIndex, setSelectedIndex] = useState(0);
 
-  const { completionApi } = useContext(NovelContext);
-
-  const { complete, isLoading } = useCompletion({
-    id: "novel",
-    api: completionApi,
-    onResponse: (response) => {
-      if (response.status === 429) {
-        toast.error("You have reached your request limit for the day.");
-        va.track("Rate Limit Reached");
-        return;
-      }
-      editor.chain().focus().deleteRange(range).run();
-    },
-    onFinish: (_prompt, completion) => {
-      // highlight the generated text
-      editor.commands.setTextSelection({
-        from: range.from,
-        to: range.from + completion.length,
-      });
-    },
-    onError: (e) => {
-      toast.error(e.message);
-    },
-  });
 
   const selectItem = useCallback(
     (index: number) => {
       const item = items[index];
-      va.track("Slash Command Used", {
-        command: item.title,
-      });
       if (item) {
-        if (item.title === "Continue writing") {
-          if (isLoading) return;
-          complete(
-            getPrevText(editor, {
-              chars: 5000,
-              offset: 1,
-            })
-          );
-        } else {
-          command(item);
-        }
+        command(item);
       }
     },
-    [complete, isLoading, command, editor, items]
+    [command, items]
   );
 
   useEffect(() => {
@@ -364,11 +326,7 @@ const CommandList = ({
             onClick={() => selectItem(index)}
           >
             <div className="novel-flex novel-h-10 novel-w-10 novel-items-center novel-justify-center novel-rounded-md novel-border novel-border-stone-200 novel-bg-white">
-              {item.title === "Continue writing" && isLoading ? (
-                <LoadingCircle />
-              ) : (
-                item.icon
-              )}
+              {item.icon}
             </div>
             <div>
               <p className="novel-font-medium">{item.title}</p>
